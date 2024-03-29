@@ -73,6 +73,20 @@ def userpage(username):
     else:
         return "User not found", 404
 
+@app.route('/forget_password', methods=['GET', 'POST'])
+def forget_password():
+    if request.method == 'POST':
+        email = request.json.get('email')
+    
+
+    
+        if email in users:
+            return redirect(url_for('change_password', email='email'))
+  
+        else:
+            return jsonify({"success": False, "message": "Email not found."}), 404
+    
+    return render_template('forget_password.html')
  
   
 # New route for viewing a user's profile
