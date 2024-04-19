@@ -103,41 +103,16 @@ def forget_password():
         
 
 
-        if email in user:
-            
-            code = ''.join(random.choices(string.digits, k=6))
-            print(code)
-
-            msg = EmailMessage()
-            msg.set_content(f'Your verification code is: {code}')
-
-            msg['Subject'] = 'Password Reset Verification Code'
-            msg['From'] = 'admin@gmail.com'
-            msg['To'] = email
-
-            try:
-                server = smtplib.SMTP('smtp.example.com', 587)
-                server.starttls()
-                server.login('admin@example.com', 'password')
-                server.send_message(msg)
-                server.quit()
-                print(f'Code sent to {email}')
-            except Exception as e:
-                print(f'Error sending code to {email}: {e}')
-
-            # Redirect to the change password page with the email and code
-            return redirect(url_for('change_password', email=email, code=code))
-
-        else:
-            return jsonify({"success": False, "message": "Email not found."}), 404
+       
 
     return render_template('forget_password.html')
 
 @app.route('/change_password',methods=['GET', 'POST'])
 def change_password():
-
+    username = session.get('username', 'default_user')
     if request.method == 'POST':
         new_password = request.json.get('password')
+
 
 
 
@@ -161,6 +136,8 @@ headers = {"Authorization": "Bearer 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"}
 def query(payload):
     response = requests.post(API_URL, headers=headers, json=payload)
     return response.json()
+
+
 
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
@@ -194,6 +171,7 @@ def chat():
         if user_data and 'chathistory' in user_data:
             messages = user_data['chathistory']
         return render_template('chat.html', messages=messages)
+
 
 @app.route('/admin', methods=['GET', 'POST'])
 def print_json_db():
@@ -285,14 +263,11 @@ def blogpost():
 
     return render_template('blogpost.html', blog=blog)
 
-    return render_template('blogpost.html', blog=blog)
-
 @app.route('/add_comment_reaction', methods=['POST'])
 def add_comment_reaction():
     # Retrieve the blog ID, comment, and reaction from the form data
-    blog_id = request.form['blog_id']
+    
     comment = request.form['comment']
-    reaction = request.form['reaction']
 
     # Update the blog document in the MongoDB database with the new comment and reaction
     # blog_collection.update_one({'_id': ObjectId(blog_id)}, {'$set': {'comments': comment, 'reactions': reaction}})
@@ -302,6 +277,7 @@ def add_comment_reaction():
 
 @app.route('/table', methods=['GET', 'POST'])
 def table():
+    
     return render_template('table.html')
 
 
