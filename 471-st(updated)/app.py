@@ -103,41 +103,16 @@ def forget_password():
         
 
 
-        if email in user:
-            
-            code = ''.join(random.choices(string.digits, k=6))
-            print(code)
-
-            msg = EmailMessage()
-            msg.set_content(f'Your verification code is: {code}')
-
-            msg['Subject'] = 'Password Reset Verification Code'
-            msg['From'] = 'admin@gmail.com'
-            msg['To'] = email
-
-            try:
-                server = smtplib.SMTP('smtp.example.com', 587)
-                server.starttls()
-                server.login('admin@example.com', 'password')
-                server.send_message(msg)
-                server.quit()
-                print(f'Code sent to {email}')
-            except Exception as e:
-                print(f'Error sending code to {email}: {e}')
-
-            # Redirect to the change password page with the email and code
-            return redirect(url_for('change_password', email=email, code=code))
-
-        else:
-            return jsonify({"success": False, "message": "Email not found."}), 404
+       
 
     return render_template('forget_password.html')
 
 @app.route('/change_password',methods=['GET', 'POST'])
 def change_password():
-
+    username = session.get('username', 'default_user')
     if request.method == 'POST':
         new_password = request.json.get('password')
+
 
 
 
@@ -162,6 +137,8 @@ def query(payload):
     response = requests.post(API_URL, headers=headers, json=payload)
     return response.json()
 
+
+
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     username = session.get('username', 'default_user')
@@ -171,23 +148,30 @@ def chat():
         # Process the message using the Hugging Face API
         output = query({"inputs": message})
         # Adjust this line based on the actual structure of the API response
-        # For example, if the response is a list and the AI's response is the first element:
         ai_response = output[0] if output else 'AI response not available'
 
-        # Assuming each user has a chat history
-        # Use the username from the session
+        # Retrieve the user's data from the MongoDB database
         user_data = client.your_database_name.users.find_one({'username': username})
-        if username not in user_data:
-            user_data = client.your_database_name.users.find_one({'username': username})
-            users[username] = {'chathistory': []}
-        users[username]['chathistory'].append({'type': 'user', 'text': message})
-        users[username]['chathistory'].append({'type': 'ai', 'text': ai_response})
-        with open('users.json', 'w') as f:
-            json.dump(users, f)
+        if user_data is None:
+            # If the user does not exist, create a new user document with an empty chat history
+            user_data = {'username': username, 'chathistory': []}
+            client.your_database_name.users.insert_one(user_data)
+        else:
+            # If the user exists, append the new messages to their chat history
+            user_data['chathistory'].append({'type': 'user', 'text': message})
+            user_data['chathistory'].append({'type': 'ai', 'text': ai_response})
+            # Update the user document in the MongoDB database
+            client.your_database_name.users.update_one({'username': username}, {'$set': {'chathistory': user_data['chathistory']}})
+
+        # Redirect back to the chat page
         return redirect(url_for('chat'))
-    if username in users:
-        messages = users[username]['chathistory']
-    return render_template('chat.html', messages=messages)
+    else:
+        # Retrieve the user's chat history from the MongoDB database
+        user_data = client.your_database_name.users.find_one({'username': username}, {'chathistory': 1})
+        if user_data and 'chathistory' in user_data:
+            messages = user_data['chathistory']
+        return render_template('chat.html', messages=messages)
+
 
 @app.route('/admin', methods=['GET', 'POST'])
 def print_json_db():
@@ -272,16 +256,18 @@ def upload_blog():
 
 @app.route('/blogpost')
 def blogpost():
-    blog = list(blog_collection.find())
+    username = session.get('username', 'default_user')
+    user_data = client.your_database_name.blog.find_one({'username': username})
+    if user_data and 'blogs' in user_data:
+            blog = user_data['blogs']
 
     return render_template('blogpost.html', blog=blog)
 
 @app.route('/add_comment_reaction', methods=['POST'])
 def add_comment_reaction():
     # Retrieve the blog ID, comment, and reaction from the form data
-    blog_id = request.form['blog_id']
+    
     comment = request.form['comment']
-    reaction = request.form['reaction']
 
     # Update the blog document in the MongoDB database with the new comment and reaction
     # blog_collection.update_one({'_id': ObjectId(blog_id)}, {'$set': {'comments': comment, 'reactions': reaction}})
@@ -291,6 +277,7 @@ def add_comment_reaction():
 
 @app.route('/table', methods=['GET', 'POST'])
 def table():
+    
     return render_template('table.html')
 
 

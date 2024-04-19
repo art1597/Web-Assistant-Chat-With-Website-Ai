@@ -39,9 +39,18 @@
         li:last-child {
             border-bottom: none;
         }
-        #logout-btn,
+        #logout-btn{
+            width: 10%;
+            padding: 5px;
+            background-color: rgba(233, 11, 30, 0.63);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
         #sexy-btn {
-            width: 100%;
+            width: 50%;
             padding: 50px;
             background-color: rgba(233, 11, 30, 0.63);
             color: #fff;
@@ -88,6 +97,12 @@
     <div class="navbar">
         <div class="navbar-left">
             <h3 align="center">Hello, {{ user.name }}</h3>
+            
+        </div>
+        <div class="navbar-right">
+            <form action="/logout" method="post">
+                <button type="submit" id="logout-btn" align="right">Logout</button>
+            </form>
         </div>
         
     </div>
@@ -100,11 +115,12 @@
         {% endfor %}
     </ul>
     <p align="center"><a href="/chat">Go to Chat</a></p>
-    <form action="/logout" method="post">
-        <button type="submit" id="logout-btn">Logout</button>
+    <form action="/blogpost" method="get">
+        <button type="submit" id="sexy-btn" class="sexy-btn">See Blogs</button>
     </form>
     <form action="/upload_blog" method="get">
-        <button type="submit" id="sexy-btn" class="sexy-btn">Upload Blog</button>
+        <button type="submit" id="sexy-btn" class="sexy-btn">Become a Blog Writer</button>
     </form>
+    
 </body>
 </html>
