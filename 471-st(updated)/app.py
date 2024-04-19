@@ -101,8 +101,6 @@ def forget_password():
         email = request.form.get('email')
         user = client.your_database_name.users.find_one({'email': email})
         
-
-
         if email in user:
             
             code = ''.join(random.choices(string.digits, k=6))
@@ -139,9 +137,6 @@ def change_password():
     if request.method == 'POST':
         new_password = request.json.get('password')
 
-
-
-
 @app.route('/profile/<username>')
 def profile(username):
     # Check if the username in the session matches the requested username
@@ -171,23 +166,29 @@ def chat():
         # Process the message using the Hugging Face API
         output = query({"inputs": message})
         # Adjust this line based on the actual structure of the API response
-        # For example, if the response is a list and the AI's response is the first element:
         ai_response = output[0] if output else 'AI response not available'
 
-        # Assuming each user has a chat history
-        # Use the username from the session
+        # Retrieve the user's data from the MongoDB database
         user_data = client.your_database_name.users.find_one({'username': username})
-        if username not in user_data:
-            user_data = client.your_database_name.users.find_one({'username': username})
-            users[username] = {'chathistory': []}
-        users[username]['chathistory'].append({'type': 'user', 'text': message})
-        users[username]['chathistory'].append({'type': 'ai', 'text': ai_response})
-        with open('users.json', 'w') as f:
-            json.dump(users, f)
+        if user_data is None:
+            # If the user does not exist, create a new user document with an empty chat history
+            user_data = {'username': username, 'chathistory': []}
+            client.your_database_name.users.insert_one(user_data)
+        else:
+            # If the user exists, append the new messages to their chat history
+            user_data['chathistory'].append({'type': 'user', 'text': message})
+            user_data['chathistory'].append({'type': 'ai', 'text': ai_response})
+            # Update the user document in the MongoDB database
+            client.your_database_name.users.update_one({'username': username}, {'$set': {'chathistory': user_data['chathistory']}})
+
+        # Redirect back to the chat page
         return redirect(url_for('chat'))
-    if username in users:
-        messages = users[username]['chathistory']
-    return render_template('chat.html', messages=messages)
+    else:
+        # Retrieve the user's chat history from the MongoDB database
+        user_data = client.your_database_name.users.find_one({'username': username}, {'chathistory': 1})
+        if user_data and 'chathistory' in user_data:
+            messages = user_data['chathistory']
+        return render_template('chat.html', messages=messages)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def print_json_db():
