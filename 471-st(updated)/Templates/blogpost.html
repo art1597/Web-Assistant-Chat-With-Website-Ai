@@ -42,16 +42,13 @@
         {% if b.image %}
             <img src="{{ b.image }}" alt="blog image">
         {% endif %}
-        <p>Comment: {{ b.comment }}</p>
-        <!-- <p>Rating: {{ blog.rating }}</p> -->
+        <form method="POST" action="/add_comment_reaction">
+            <label for="comment">Comment:</label><br>
+            <textarea name="comment" id="comment" rows="4" cols="50"></textarea><br>
+
+        </form>    
+
     {% endfor %}
-    <form method="POST" action="/add_comment_reaction">
-        <label for="comment">Comment:</label><br>
-        <textarea name="comment" id="comment" rows="4" cols="50"></textarea><br>
-        <label for="reaction">Reaction:</label><br>
-        <input type="text" name="reaction" id="reaction"><br> 
-        <!-- <input type="hidden" name="blog_id" value="{{ blog._id }}"> -->
-        <input type="submit" value="Submit">
-    </form>
+    
 </body>
 </html>
